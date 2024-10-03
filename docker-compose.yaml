@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  migrator:
+    image: arigaio/atlas
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - postgres
+    restart: on-failure
+    command: migrate apply --url "postgres://postgresadmin:oe6X9kRm5K@postgres:5432/postgres?search_path=public&sslmode=disable"
+    networks:
+      - proxy
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    container_name: music-service
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - proxy
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    networks:
+      - proxy
+    environment:
+      - POSTGRES_USER=postgresadmin
+      - POSTGRES_PASSWORD=oe6X9kRm5K
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres:/var/lib/postgresql@16/data:rw
+    restart: unless-stopped
+
+volumes:
+  postgres: {}
+
+networks:
+  proxy:
+    name: proxy
+  default:
+    name: music-service
